@@ -1,5 +1,4 @@
 /** @jsx React.DOM */
-
 var About = React.createClass({
 	render: function() {
 		return (
@@ -7,7 +6,6 @@ var About = React.createClass({
 		);
 	}
 });
-
 
 var UserList = React.createClass({
 	render: function() {
@@ -49,7 +47,6 @@ var UserList = React.createClass({
 	}
 });
 
-
 var UserEdit = React.createClass({
 	render: function() {
 		return (
@@ -71,6 +68,7 @@ var UserEdit = React.createClass({
 						<div className="form-group">
 							<label>Last name</label>
 							<input className="form-control"/>
+							Content of the first tab
 						</div>
 						<A className="btn btn-default" url={this.props.componentUrl} path="addfriend">Add friend</A>
 					</form>
@@ -102,10 +100,8 @@ var ClientsModule = React.createClass({
 	}
 });
 
-
 var App = React.createClass({
 	render: function() {
-
 		var menu = [
 			{
 				url: 'users',
@@ -157,4 +153,3 @@ var App = React.createClass({
 });
 
 PathInit(<App/>, document.body);
-
