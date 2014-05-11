@@ -156,5 +156,5 @@ var App = React.createClass({
 	}
 });
 
-React.renderComponent(<PathInit render={App}/>, document.body);
+PathInit(<App/>, document.body);
 

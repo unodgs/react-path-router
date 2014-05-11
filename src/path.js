@@ -13,6 +13,9 @@ var A = React.createClass({
 });
 
 var PathUtils = {
+	activate: function(path) {
+		window.location.hash = path;
+	},
 	current: function() {
 		return window.location.hash.substr(1);
 	},
@@ -144,15 +147,18 @@ var PathBase = React.createClass({
 		);
 
 		if (url) {
-			var params = {
-				url: { prevUrl: url.prevUrl, nextUrl: url.nextUrl },
-				componentUrl: url.prevUrl
-			};
-			params = $.extend(params, url.params);
-
-			return this.props.render
-				? this.props.render(params)
-				: <div>{this.props.children}</div>;
+			if (this.props.call && _.isFunction(this.props.call)) {
+				this.props.call();
+			} else {
+				var params = {
+					url: { prevUrl: url.prevUrl, nextUrl: url.nextUrl },
+					componentUrl: url.prevUrl
+				};
+				params = $.extend(params, url.params);
+				return this.props.render
+					? (_.isFunction(this.props.render) ? this.props.render(params) : this.props.render)
+					: <div>{this.props.children}</div>;
+			}
 		}
 
 		return <Empty/>;
@@ -165,7 +171,7 @@ var Path = React.createClass({
 		name: React.PropTypes.string.isRequired
 	},
 	render: function() {
-		return <PathBase url={this.props.url} name={this.props.name} render={this.props.render} forward={true} children={this.props.children}/>;
+		return <PathBase url={this.props.url} name={this.props.name} render={this.props.render} call={this.props.call} forward={true} children={this.props.children}/>;
 	}
 });
 
@@ -175,22 +181,15 @@ var PathEnd = React.createClass({
 		name: React.PropTypes.string.isRequired
 	},
 	render: function() {
-		return <PathBase url={this.props.url} name={this.props.name} render={this.props.render} forward={false} children={this.props.children}/>;
+		return <PathBase url={this.props.url} name={this.props.name} render={this.props.render} call={this.props.call} forward={false} children={this.props.children}/>;
 	}
 });
 
-var PathInit = React.createClass({
-	propTypes: {
-		render: React.PropTypes.func.isRequired,
-		domNode: React.PropTypes.object
-	},
-	main: function() {
-		React.renderComponent(this, this.props.domNode || document.body);
-	},
-	componentDidMount: function() {
-		window.onhashchange = this.main;
-	},
-	render: function() {
-		return <PathBase url={this.props.url} name="/" render={this.props.render} forward={true} children={this.props.children}/>;
+
+function PathInit(reactComponent, domNode) {
+	function updateMainComponent() {
+		React.renderComponent(reactComponent, domNode);
 	}
-});
+	window.onhashchange = updateMainComponent;
+	updateMainComponent();
+}
