@@ -1,4 +1,3 @@
-/** @jsx React.DOM */
 var Empty = React.createClass({
 	render: function() {
 		return <div>{this.props.children}</div>;
@@ -15,6 +14,23 @@ var A = React.createClass({
 var PathUtils = {
 	activate: function(path) {
 		window.location.hash = path;
+	},
+	isCurrent: function(componentUrl, name, n) {
+		var url = this.combine(componentUrl, name);
+		var currentUrl = this.current();
+
+		if (n !== undefined) {
+			var p = 0;
+			while (p >= 0 && n > 0) {
+				p = url.indexOf("/", p + 1);
+				--n;
+			}
+
+			if (p >= 0)
+				url = url.substr(0, p);
+		}
+
+		return currentUrl.indexOf(url) === 0;
 	},
 	current: function() {
 		return window.location.hash.substr(1);
@@ -48,8 +64,7 @@ var PathUtils = {
 
 			href += path;
 		}
-
-		return href
+		return href;
 	},
 	fixPath: function(path) {
 		path = path.trim();
@@ -131,64 +146,86 @@ var PathUtils = {
 
 var Paths = React.createClass({
 	render: function() {
-		return <div>{this.props.children}</div>;
+		return <div>{this.props.children}</div>
 	}
 });
 
 var PathBase = React.createClass({
-	render: function() {
+	getUrl: function() {
 		var currentUrl = window.location.hash;
+		var ctxUrl = this.context.url;
 
-		var url = PathUtils.parsePath(
-			this.props.url ? this.props.url.prevUrl : '/',
-			this.props.url ? this.props.url.nextUrl : currentUrl,
+		return PathUtils.parsePath(
+			ctxUrl ? ctxUrl.prevUrl : '/',
+			ctxUrl ? ctxUrl.nextUrl : currentUrl,
 			this.props.name || '/',
 			this.props.forward
 		);
-
+	},
+	childContextTypes: {
+		url: React.PropTypes.object
+	},
+	getChildContext: function() {
+		var url = this.getUrl();
+		return {
+			url: url ? url : null
+		};
+	},
+	contextTypes: {
+		url: React.PropTypes.object
+	},
+	render: function() {
+		var url = this.getUrl();
 		if (url) {
 			if (this.props.call && _.isFunction(this.props.call)) {
 				this.props.call();
 			} else {
-				var params = {
-					url: { prevUrl: url.prevUrl, nextUrl: url.nextUrl },
-					componentUrl: url.prevUrl
-				};
-				params = $.extend(params, url.params);
-				return this.props.render
-					? (_.isFunction(this.props.render) ? this.props.render(params) : this.props.render)
-					: <div>{this.props.children}</div>;
+				if (React.isValidElement(this.props.render)) {
+					return this.props.render;
+				} else if (this.props.render) {
+					var params = $.extend(
+						this.props.params || {},
+						url.params,
+						{ componentUrl: url.prevUrl }
+					);
+					var el = React.createElement(this.props.render, params);
+					return el;
+				} else {
+					return this.props.children;
+				}
 			}
 		}
-
 		return <Empty/>;
 	}
 });
 
 var Path = React.createClass({
 	propTypes: {
-		url: React.PropTypes.object,
 		name: React.PropTypes.string.isRequired
 	},
 	render: function() {
-		return <PathBase url={this.props.url} name={this.props.name} render={this.props.render} call={this.props.call} forward={true} children={this.props.children}/>;
+		return <PathBase name={this.props.name} render={this.props.render} call={this.props.call} params={this.props.params} children={this.props.children} forward={true}/>;
 	}
 });
 
 var PathEnd = React.createClass({
 	propTypes: {
-		url: React.PropTypes.object,
 		name: React.PropTypes.string.isRequired
 	},
 	render: function() {
-		return <PathBase url={this.props.url} name={this.props.name} render={this.props.render} call={this.props.call} forward={false} children={this.props.children}/>;
+		return <PathBase name={this.props.name} render={this.props.render} call={this.props.call} params={this.props.params} children={this.props.children} forward={false}/>;
 	}
 });
 
-
-function PathInit(reactComponent, domNode) {
+function PathInit(reactComponent, params) {
 	function updateMainComponent() {
-		React.renderComponent(reactComponent, domNode);
+		var currentUrl = PathUtils.fixPath(window.location.hash);
+		var loginUrl = params.authenticationUrl && PathUtils.fixPath(params.authenticationUrl);
+		if(currentUrl !== loginUrl && params.authenticationFn && !params.authenticationFn())
+			PathUtils.activate(params.authenticationUrl);
+		else {
+			React.render(reactComponent, params.domNode);
+		}
 	}
 	window.onhashchange = updateMainComponent;
 	updateMainComponent();

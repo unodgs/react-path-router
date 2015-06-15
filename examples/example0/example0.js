@@ -1,4 +1,3 @@
-/** @jsx React.DOM */
 var About = React.createClass({
 	render: function() {
 		return (
@@ -18,9 +17,9 @@ var UserList = React.createClass({
 			{id: 1004, username: 'frodo', password: 'ppp222', firstName: 'Michael', lastName: 'Watson'}
 		];
 
-		var usersHtml = _.map(users, function(u) {
+		var usersHtml = _.map(users, u => {
 			return (
-				<tr>
+				<tr key={u.id}>
 					<td>{u.username}</td>
 					<td>{u.password}</td>
 					<td>{u.firstName}</td>
@@ -51,7 +50,7 @@ var UserEdit = React.createClass({
 	render: function() {
 		return (
 			<Paths>
-				<Path url={this.props.url} name="/">
+				<Path name="/">
 					<form role="form">
 						<div className="form-group">
 							<label>Username</label>
@@ -73,7 +72,7 @@ var UserEdit = React.createClass({
 						<A className="btn btn-default" url={this.props.componentUrl} path="addfriend">Add friend</A>
 					</form>
 				</Path>
-				<Path url={this.props.url} name="/addfriend">
+				<Path name="/addfriend">
 					<h1>Adding friend form :)</h1>
 				</Path>
 			</Paths>
@@ -85,8 +84,8 @@ var UsersModule = React.createClass({
 	render: function() {
 		return (
 			<Paths>
-				<Path url={this.props.url} name="/" render={UserList}/>
-				<Path url={this.props.url} name="edit/:userId" render={UserEdit}/>
+				<Path name="/" render={UserList}/>
+				<Path name="edit/:userId" render={UserEdit}/>
 			</Paths>
 		);
 	}
@@ -119,13 +118,13 @@ var App = React.createClass({
 
 		var _this = this;
 
-		var drawMenu = function(menu) {
-			var mm = _.map(menu, function(m) {
+		var drawMenu = menu => {
+			var mm = _.map(menu, m => {
 				var currentUrl = PathUtils.current();
 				var menuUrl = PathUtils.combine(_this.props.parentUrl, m.url);
 
 				return (
-					<li className={menuUrl === currentUrl ? "active": ""}>
+					<li className={menuUrl === currentUrl ? "active": ""} key={m.url}>
 						<A url={_this.props.componentUrl} path={m.url}>{m.name}</A>
 					</li>
 				);
@@ -143,13 +142,16 @@ var App = React.createClass({
 			<div>
 				{menuHtml}
 				<div className="container">
-					<Path url={this.props.url} name="users" render={UsersModule}/>
-					<Path url={this.props.url} name="clients" render={ClientsModule}/>
-					<Path url={this.props.url} name="about" render={About}/>
+					<Path name="users" render={UsersModule}/>
+					<Path name="clients" render={ClientsModule}/>
+					<Path name="about" render={About}/>
 				</div>
 			</div>
 		);
 	}
 });
 
-PathInit(<App/>, document.body);
+PathInit(<App/>, {
+	root: '',
+	domNode: document.body
+});
